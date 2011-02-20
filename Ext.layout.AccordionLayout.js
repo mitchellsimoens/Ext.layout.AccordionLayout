@@ -24,21 +24,26 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	type: "accordion",
 
+	activeEl: undefined,
+
 	/**
 	  * @private
 	  */
 	onLayout: function() {
 		Ext.layout.AccordionLayout.superclass.onLayout.call(this);
 
-		this.prepareItems();
+		var items = this.getLayoutItems();
+
+		this.getExpandedHeight(items);
+
+		this.prepareItems(items);
 	},
 
 	/**
 	  * @private
 	  */
-	prepareItems: function() {
-		var items = this.getLayoutItems(),
-			ln = items.length,
+	prepareItems: function(items) {
+		var ln = items.length,
 			item, i;
 
 		for (i = 0; i < ln; i++) {
@@ -55,37 +60,57 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	renderItem: function(item, position, target) {
 		Ext.layout.AccordionLayout.superclass.renderItem.call(this, item, position, target);
 
+		var wrap = this.wrapItem(item);
+		item.wrap = wrap;
+	},
+
+	moveItem: function(item, position, target) {
+		target = item.wrap;
+		position = 1;
+		Ext.layout.AccordionLayout.superclass.moveItem.call(this, item, position, target);
+	},
+
+	wrapItem: function(item) {
 		var wrap = item.el.wrap({
 			cls: "section"
 		});
 
 		var title = wrap.createChild({
 			tag: "h3",
+			cls: this.itemCls + "-header-wrap",
 			html: "<a>" + item.title + "</a>"
 		}, item.el);
 
 		title.on("click", this.expandItem, this);
+
+		return wrap;
+	},
+
+	getExpandedHeight: function(items) {
+		var height = 0, parent;
+		for (var i = 0; i < items.length; i++) {
+			parent = items[i].el.parent();
+			height += parent.child("." + this.itemCls + "-header-wrap").getHeight();
+		}
+
+		this.expandedHeight = this.getTarget().getHeight() - height - 6;
+
+		return this.expandedHeight;
 	},
 
 	/**
 	  * @private
 	  */
 	startExpand: function(items) {
-		var item = items[this.activeItem];
+		var el = this.activeEl || items[this.activeItem].el;
 
-		var height = 0, parent;
-		for (var i = 0; i < items.length; i++) {
-			parent = items[i].el.parent();
-			height += parent.getHeight();
-		}
-
-		this.expandedHeight = this.getTarget().getHeight() - height;
-
-		this.expandItem(item.el);
+		this.expandItem(el);
 	},
 
 	expandItem: function(el, node) {
 		el = this.pickEl(el, node);
+
+		this.activeEl = el;
 
 		var target = this.getTarget();
 
@@ -103,8 +128,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  * @private
 	  */
 	collapseItem: function(el) {
-		el = this.pickEl(el);
-
+		if (el === null) { return ; }
 		el.setStyle("height", "0px");
 	},
 
