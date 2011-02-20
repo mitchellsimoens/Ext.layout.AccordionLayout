@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Sencha Touch Accordion Layout</title>
+
+		<link rel="stylesheet" href="/sencha-touch-1.0.2/resources/css/sencha-touch.css" type="text/css">
+		<script type="text/javascript" src="/sencha-touch-1.0.2/sencha-touch-debug.js"></script>
+
+		<link rel="stylesheet" href="Ext.layout.AccordionLayout.css" type="text/css">
+		<script type="text/javascript" src="Ext.layout.AccordionLayout.js"></script>
+
+		<script type="text/javascript">
+Ext.setup({
+    onReady: function() {
+		var panel = new Ext.Panel({
+			fullscreen: true,
+			layout: {
+				type: "accordion",
+				activeItem: 0
+			},
+			items: [
+				{ xtype: "panel", title: "One Title",   html: "One"   },
+				{ xtype: "panel", title: "Two Title",   html: "Two"   },
+				{ xtype: "panel", title: "Three Title", html: "Three" },
+				{ xtype: "panel", title: "Four Title",  html: "Four"  },
+				{ xtype: "panel", title: "Five Title",  html: "Five"  },
+				{ xtype: "panel", title: "Six Title",   html: "Six"   }
+			]
+		});
+    }
+});
+		</script>
+    </head>
+    <body>
+    </body>
+</html>
