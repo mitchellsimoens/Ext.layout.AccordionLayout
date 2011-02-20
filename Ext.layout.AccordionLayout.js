@@ -34,8 +34,6 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 		var items = this.getLayoutItems();
 
-		this.getExpandedHeight(items);
-
 		this.prepareItems(items);
 	},
 
@@ -61,11 +59,12 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		Ext.layout.AccordionLayout.superclass.renderItem.call(this, item, position, target);
 
 		var wrap = this.wrapItem(item);
-		item.wrap = wrap;
+		item.wrapEl = wrap[0];
+		item.el.headerEl = wrap[1]
 	},
 
 	moveItem: function(item, position, target) {
-		target = item.wrap;
+		target = item.wrapEl;
 		position = 1;
 		Ext.layout.AccordionLayout.superclass.moveItem.call(this, item, position, target);
 	},
@@ -83,19 +82,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 		title.on("click", this.expandItem, this);
 
-		return wrap;
-	},
-
-	getExpandedHeight: function(items) {
-		var height = 0, parent;
-		for (var i = 0; i < items.length; i++) {
-			parent = items[i].el.parent();
-			height += parent.child("." + this.itemCls + "-header-wrap").getHeight();
-		}
-
-		this.expandedHeight = this.getTarget().getHeight() - height - 6;
-
-		return this.expandedHeight;
+		return [wrap, title];
 	},
 
 	/**
@@ -121,7 +108,12 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 			this.collapseItem(item);
 		}
 
-		el.setStyle("height", this.expandedHeight + "px");
+		var headerHeight = el.headerEl.getHeight();
+		headerHeight *= i;
+
+		var expandHeight = this.getTarget().getHeight() - headerHeight;
+
+		el.setStyle("height", expandHeight + "px");
 	},
 
 	/**
