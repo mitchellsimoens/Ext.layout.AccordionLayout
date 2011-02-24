@@ -25,16 +25,27 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	type: "accordion",
 
 	activeEl: undefined,
-
+	
+	/**
+	  * @cfg {Number} minHeight
+	  * Minimum height of expanded component.
+	  * Default: 150
+	  */
+	minHeight: 150,
+	
+	onLayout: function() {
+		Ext.layout.AccordionLayout.superclass.onLayout.call(this);
+		this.layoutBusy = true;
+	},
+	
 	/**
 	  * @private
 	  */
-	onLayout: function() {
-		Ext.layout.AccordionLayout.superclass.onLayout.call(this);
-
+	afterLayout: function() {
 		var items = this.getLayoutItems();
 
 		this.prepareItems(items);
+		this.layoutBusy = false;
 	},
 
 	/**
@@ -47,6 +58,9 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		for (i = 0; i < ln; i++) {
 			item = items[i];
 			item.doComponentLayout();
+			if (item.el !== this.activeEl) {
+				this.collapseItem(item.el);
+			}
 		}
 
 		this.startExpand(items);
@@ -60,7 +74,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 		var wrap = this.wrapItem(item);
 		item.wrapEl = wrap[0];
-		item.el.headerEl = wrap[1]
+		item.el.headerEl = wrap[1];
 	},
 
 	moveItem: function(item, position, target) {
@@ -77,7 +91,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		var title = wrap.createChild({
 			tag: "h3",
 			cls: this.itemCls + "-header-wrap",
-			html: "<a>" + item.title + "</a>"
+			html: item.title + "<div class='" + this.itemCls + "-arrow'></div>"
 		}, item.el);
 
 		title.on("click", this.expandItem, this);
@@ -96,24 +110,36 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 	expandItem: function(el, node) {
 		el = this.pickEl(el, node);
+		
+		if (el === this.activeEl && !this.layoutBusy) {
+			this.collapseItem(el);
+			return ;
+		}
+		
+		var arrow = Ext.get(el.headerEl.query("." + this.itemCls + "-arrow")[0]);
+		
+		this.rotateArrow(arrow, 90);
 
-		this.activeEl = el;
-
-		var target = this.getTarget();
+		var target = this.getTarget(),
+			minHeight = this.minHeight;
 
 		var sections = target.query(".section");
-		for (var i = 0; i < sections.length; i++) {
-			var section = Ext.get(sections[i]);
-			var item = section.child("." + this.itemCls);
-			this.collapseItem(item);
+		if (typeof this.activeEl === "object") {
+			this.collapseItem(this.activeEl);
 		}
 
 		var headerHeight = el.headerEl.getHeight();
-		headerHeight *= i;
+		headerHeight *= sections.length - 1;
 
 		var expandHeight = this.getTarget().getHeight() - headerHeight;
+		
+		if (expandHeight < minHeight) {
+			expandHeight = minHeight;
+		}
 
 		el.setStyle("height", expandHeight + "px");
+		
+		this.activeEl = el;
 	},
 
 	/**
@@ -121,7 +147,19 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	collapseItem: function(el) {
 		if (el === null) { return ; }
+		var arrow = Ext.get(el.headerEl.query("." + this.itemCls + "-arrow")[0]);
+		this.rotateArrow(arrow, 0);
+		
 		el.setStyle("height", "0px");
+	},
+	
+	rotateArrow: function(el, deg) {
+		el.setStyle({
+			"-webkit-transform": "rotate(" + deg + "deg)",
+			"-webkit-transition-property": "-webkit-transform",
+			"-webkit-transition-duration": "0.3s",
+			"-webkit-transition-timing-function": "ease-in-out"
+		});
 	},
 
 	/**
