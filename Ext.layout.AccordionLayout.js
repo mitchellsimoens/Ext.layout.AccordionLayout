@@ -20,24 +20,30 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	targetCls: "x-layout-accordion",
 	/**
-	  * @private
+	  * @cfg {Boolean} allowCollapse
+	  * Allow all items to be collapsed at the same time.
+	  * Default: false
 	  */
-	type: "accordion",
-
-	activeEl: undefined,
-	
+	allowCollapse: false,
 	/**
 	  * @cfg {Number} minHeight
 	  * Minimum height of expanded component.
 	  * Default: 150
 	  */
 	minHeight: 150,
-	
-	onLayout: function() {
-		Ext.layout.AccordionLayout.superclass.onLayout.call(this);
+	/**
+	  * @private
+	  */
+	type: "accordion",
+
+	activeEl: undefined,
+
+	beforeLayout: function() {
 		this.layoutBusy = true;
+		this.activeItem = this.getActiveItem();
+		Ext.layout.AccordionLayout.superclass.beforeLayout.apply(this, arguments);
 	},
-	
+
 	/**
 	  * @private
 	  */
@@ -46,6 +52,33 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 		this.prepareItems(items);
 		this.layoutBusy = false;
+	},
+
+	/**
+	 * Return the active (visible) component in the layout.
+	 * @returns {Ext.Component}
+	 */
+	getActiveItem: function() {
+		if (!this.activeItem && this.owner) {
+			this.activeItem = this.parseActiveItem(this.owner.activeItem);
+		}
+		if (this.activeItem && this.owner.items.items.indexOf(this.activeItem) != -1) {
+			return this.activeItem;
+		}
+		return null;
+	},
+
+	/**
+	  * @private
+	  */
+	parseActiveItem: function(item) {
+		if (item && item.isComponent) {
+			return item;
+		} else if (typeof item == 'number' || item == undefined) {
+			return this.getLayoutItems()[item || 0];
+		} else {
+			return this.owner.getComponent(item);
+		}
 	},
 
 	/**
@@ -103,21 +136,26 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  * @private
 	  */
 	startExpand: function(items) {
-		var el = this.activeEl || items[this.activeItem].el;
+		var el = this.activeEl || this.activeItem.el;
 
 		this.expandItem(el);
 	},
 
 	expandItem: function(el, node) {
 		el = this.pickEl(el, node);
-		
-		if (el === this.activeEl && !this.layoutBusy) {
+		var activeItem = this.activeItem,
+			owner      = this.owner;
+
+		if (!activeItem.fireEvent("beforeactivate", activeItem)) { return false; }
+
+		if (el === this.activeEl && !this.layoutBusy && this.allowCollapse) {
 			this.collapseItem(el);
+			this.activeEl = null;
 			return ;
 		}
-		
+
 		var arrow = Ext.get(el.headerEl.query("." + this.itemCls + "-arrow")[0]);
-		
+
 		this.rotateArrow(arrow, 90);
 
 		var target = this.getTarget(),
@@ -129,16 +167,18 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		}
 
 		var headerHeight = el.headerEl.getHeight();
-		headerHeight *= sections.length - 1;
+		headerHeight *= sections.length;
 
 		var expandHeight = this.getTarget().getHeight() - headerHeight;
-		
+
 		if (expandHeight < minHeight) {
 			expandHeight = minHeight;
 		}
 
 		el.setStyle("height", expandHeight + "px");
-		
+
+		activeItem.fireEvent("activate", activeItem);
+
 		this.activeEl = el;
 	},
 
@@ -146,13 +186,15 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  * @private
 	  */
 	collapseItem: function(el) {
-		if (el === null) { return ; }
+		var activeItem = this.activeItem;
+		if (el === null || !activeItem.fireEvent("beforedeactivate", activeItem)) { return ; }
 		var arrow = Ext.get(el.headerEl.query("." + this.itemCls + "-arrow")[0]);
 		this.rotateArrow(arrow, 0);
-		
+
 		el.setStyle("height", "0px");
+		activeItem.fireEvent("deactivate", activeItem);
 	},
-	
+
 	rotateArrow: function(el, deg) {
 		el.setStyle({
 			"-webkit-transform": "rotate(" + deg + "deg)",

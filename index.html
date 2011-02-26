@@ -16,9 +16,11 @@ Ext.setup({
     onReady: function() {
 		var panel = new Ext.Panel({
 			fullscreen: true,
+			scroll: "vertical",
 			layout: {
 				type: "accordion",
-				activeItem: 0
+				activeItem: 0,
+				allowCollapse: true
 			},
 			items: [
 				{ xtype: "panel", title: "One Title",   html: "One"   },
