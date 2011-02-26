@@ -2,17 +2,6 @@
 	padding: 1em 0;
 }
 
-.x-layout-accordion h3 + div {
-	height: 0;
-	overflow: hidden;
-	-webkit-transition: height 0.3s ease-in;
-}
-
-.x-accordion-item-header-wrap {
-	width: 100%;
-	background-image: -webkit-gradient(linear,0% 0,0% 100%,color-stop(0%,#96A9C0),color-stop(2%,#5A7596),color-stop(100%,#394B5F));
-}
-
 .x-accordion-item-arrow {
 	display: inline;
 	float: right;

@@ -32,26 +32,145 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	minHeight: 150,
 	/**
+	  * @cfg {Number} animDuration
+	  * Number of milliseconds the animations will take.
+	  * Default: 300
+	  */
+	animDuration: 300,
+	/**
+	  * @cfg {Number} easing
+	  * Easing that animations will have.
+	  * Default: 'ease-in'
+	  */
+	easing: "ease-in",
+	/**
 	  * @private
 	  */
 	type: "accordion",
+	/**
+	  * @private
+	  */
+	index: 0,
 
-	activeEl: undefined,
+	/**
+	  * @private
+	  */
+	initLayout : function() {
+		Ext.layout.AccordionLayout.superclass.initLayout.call(this);
 
-	beforeLayout: function() {
-		this.layoutBusy = true;
-		this.activeItem = this.getActiveItem();
-		Ext.layout.AccordionLayout.superclass.beforeLayout.apply(this, arguments);
+		var owner = this.owner;
+		owner.el.un("click");
+		owner.el.on("click", this.handleOwnerClick, this, {delegate: "h3." + this.itemCls + "-header-wrap" });
+	},
+
+	onLayout : function() {
+		this.expandHeight = this.getExpandHeight();
+		Ext.layout.AccordionLayout.superclass.onLayout.call(this);
 	},
 
 	/**
 	  * @private
 	  */
-	afterLayout: function() {
-		var items = this.getLayoutItems();
+	renderItem: function(item, position, target) {
+		item.index = this.index;
+		item.hidden = true;
+		Ext.layout.AccordionLayout.superclass.renderItem.call(this, item, position, target);
 
-		this.prepareItems(items);
-		this.layoutBusy = false;
+		this.wrapItem(item);
+
+		if (this.activeItem === this.index) {
+			this.expandHeight = this.getExpandHeight();
+			this.expandItem(item);
+		}
+
+		this.index++;
+	},
+
+	/**
+	  * @private
+	  */
+	moveItem: function(item, position, target) {
+		target = item.el.refs.itemWrap;
+		position = 1;
+		Ext.layout.AccordionLayout.superclass.moveItem.call(this, item, position, target);
+	},
+
+	/**
+	  * @private
+	  */
+	wrapItem: function(item) {
+		var itemWrap = item.el.wrap({
+			style: "-webkit-transition: height " + this.animDuration + "ms " + this.easing + "; overflow: hidden;"
+		});
+
+		var parent = itemWrap.wrap({
+			cls: "section"
+		});
+
+		var header = parent.createChild({
+			tag: "h3",
+			cls: this.itemCls + "-header-wrap",
+			style: "width: 100%; color: #ffffff; background-image: -webkit-gradient(linear,0% 0,0% 100%,color-stop(0%,#96A9C0),color-stop(2%,#5A7596),color-stop(100%,#394B5F));",
+			html: item.title
+		}, itemWrap);
+
+		var arrow = header.createChild({
+			tag: "div",
+			cls: this.itemCls + "-arrow"
+		});
+
+		item.el.refs = {
+			itemWrap: itemWrap,
+			parentWrap: parent,
+			header: header,
+			arrow: arrow
+		};
+	},
+
+	expandItem: function(item) {
+		item = this.parseActiveItem(item);
+
+		if (!item.fireEvent("beforeactivate", this.owner, item, this.activeItem)) { return false; }
+		if (!item.fireEvent("beforeexpand", this.owner, item, this.activeItem)) { return false; }
+
+		var el = item.el,
+			arrow = el.refs.arrow;
+
+		this.activeItem = item;
+
+		el.refs.itemWrap.setHeight(this.expandHeight);
+
+		this.rotateArrow(arrow, 90);
+
+		new Ext.util.DelayedTask(function() {
+			item.setHeight(this.expandHeight);
+			item.setVisible(true);
+			item.fireEvent("activate", this.owner, item, this.activeItem);
+			item.fireEvent("expand", this.owner, item, this.activeItem);
+		}, this).delay(this.animDuration);
+	},
+
+	collapseItem: function(item) {
+		item = this.parseActiveItem(item);
+
+		if (!item.fireEvent("beforedeactivate", this.owner, item, this.activeItem)) { return false; }
+		if (!item.fireEvent("beforecollapse", this.owner, item, this.activeItem)) { return false; }
+
+		var el = item.el,
+			arrow = el.refs.arrow;
+
+		this.activeItem = undefined;
+
+		el.refs.itemWrap.setHeight(0);
+
+		this.rotateArrow(arrow, 0);
+
+		new Ext.util.DelayedTask(function() {
+			item.setHeight(0);
+			item.setVisible(true);
+			item.fireEvent("deactivate", this.owner, item, this.activeItem);
+			item.fireEvent("collapse", this.owner, item, this.activeItem);
+		}, this).delay(this.animDuration);
 	},
 
 	/**
@@ -84,142 +203,50 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	/**
 	  * @private
 	  */
-	prepareItems: function(items) {
-		var ln = items.length,
-			item, i;
+	handleOwnerClick: function(e, t) {
+		e.stopEvent();
+		var el = Ext.get(t),
+			itemEl = el.next().first(),
+			item = this.parseActiveItem(itemEl.id);
 
-		for (i = 0; i < ln; i++) {
-			item = items[i];
-			item.doComponentLayout();
-			if (item.el !== this.activeEl) {
-				this.collapseItem(item.el);
-			}
+		if (item === this.activeItem && this.allowCollapse) {
+			this.collapseItem(item);
+		} else {
+			this.collapseItem(this.activeItem);
+			this.expandItem(item);
 		}
-
-		this.startExpand(items);
 	},
 
 	/**
 	  * @private
 	  */
-	renderItem: function(item, position, target) {
-		Ext.layout.AccordionLayout.superclass.renderItem.call(this, item, position, target);
-
-		var wrap = this.wrapItem(item);
-		item.wrapEl = wrap[0];
-		item.el.headerEl = wrap[1];
-	},
-
-	moveItem: function(item, position, target) {
-		target = item.wrapEl;
-		position = 1;
-		Ext.layout.AccordionLayout.superclass.moveItem.call(this, item, position, target);
-	},
-
-	wrapItem: function(item) {
-		var wrap = item.el.wrap({
-			cls: "section"
-		});
-
-		var title = wrap.createChild({
-			tag: "h3",
-			cls: this.itemCls + "-header-wrap",
-			html: item.title + "<div class='" + this.itemCls + "-arrow'></div>"
-		}, item.el);
-
-		title.on("click", this.expandItem, this);
-
-		return [wrap, title];
-	},
-
-	/**
-	  * @private
-	  */
-	startExpand: function(items) {
-		var el = this.activeEl || this.activeItem.el;
-
-		this.expandItem(el);
-	},
-
-	expandItem: function(el, node) {
-		el = this.pickEl(el, node);
-		var activeItem = this.activeItem,
-			owner      = this.owner;
-
-		if (!activeItem.fireEvent("beforeactivate", activeItem)) { return false; }
-
-		if (el === this.activeEl && !this.layoutBusy && this.allowCollapse) {
-			this.collapseItem(el);
-			this.activeEl = null;
-			return ;
-		}
-
-		var arrow = Ext.get(el.headerEl.query("." + this.itemCls + "-arrow")[0]);
-
-		this.rotateArrow(arrow, 90);
-
-		var target = this.getTarget(),
-			minHeight = this.minHeight;
-
-		var sections = target.query(".section");
-		if (typeof this.activeEl === "object") {
-			this.collapseItem(this.activeEl);
-		}
-
-		var headerHeight = el.headerEl.getHeight();
-		headerHeight *= sections.length;
-
-		var expandHeight = this.getTarget().getHeight() - headerHeight;
+	getExpandHeight: function() {
+		var me           = this,
+			items        = me.getLayoutItems(),
+			numItems     = items.length,
+			header       = items[0].el.refs.header,
+			headerHeight = header.getHeight() * numItems,
+			expandHeight = me.getTarget().getHeight() - headerHeight,
+			minHeight    = me.minHeight;
 
 		if (expandHeight < minHeight) {
 			expandHeight = minHeight;
 		}
 
-		el.setStyle("height", expandHeight + "px");
-
-		activeItem.fireEvent("activate", activeItem);
-
-		this.activeEl = el;
+		return expandHeight;
 	},
 
 	/**
 	  * @private
 	  */
-	collapseItem: function(el) {
-		var activeItem = this.activeItem;
-		if (el === null || !activeItem.fireEvent("beforedeactivate", activeItem)) { return ; }
-		var arrow = Ext.get(el.headerEl.query("." + this.itemCls + "-arrow")[0]);
-		this.rotateArrow(arrow, 0);
-
-		el.setStyle("height", "0px");
-		activeItem.fireEvent("deactivate", activeItem);
-	},
-
 	rotateArrow: function(el, deg) {
 		el.setStyle({
 			"-webkit-transform": "rotate(" + deg + "deg)",
 			"-webkit-transition-property": "-webkit-transform",
-			"-webkit-transition-duration": "0.3s",
-			"-webkit-transition-timing-function": "ease-in-out"
+			"-webkit-transition-duration": this.animDuration + "ms",
+			"-webkit-transition-timing-function": this.easing
 		});
 	},
-
-	/**
-	  * @private
-	  */
-	pickEl: function(el, node) {
-		if (typeof el.dom !== "object") {
-			el = Ext.get(node);
-		}
-		if (!el.hasCls(this.itemCls)) {
-			if (!el.hasCls(this.targetCls)) {
-				el = el.up(".section");
-			}
-			el = el.child("." + this.itemCls);
-		}
-
-		return el;
-	}
 });
 
 Ext.regLayout("accordion", Ext.layout.AccordionLayout);
