@@ -4,94 +4,97 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	/**
 	  * @cfg {String} activeItem
 	  * The active item to start active.
-	  * Default: 0
+	  * Default: undefined
 	  */
-	activeItem: 0,
 	/**
 	  * @cfg {String} itemCls
 	  * Default CSS class to be added to each item.
 	  * Default: 'x-accordion-item'
 	  */
-	itemCls: "x-accordion-item",
+	itemCls : "x-accordion-item",
 	/**
 	  * @cfg {String} targetCls
 	  * Default CSS class to be added to target el.
 	  * Default: 'x-layout-accordion'
 	  */
-	targetCls: "x-layout-accordion",
+	targetCls : "x-layout-accordion",
 	/**
 	  * @cfg {Boolean} allowCollapse
 	  * Allow all items to be collapsed at the same time.
 	  * Default: false
 	  */
-	allowCollapse: false,
+	allowCollapse : false,
 	/**
 	  * @cfg {Number} minHeight
 	  * Minimum height of expanded component.
 	  * Default: 150
 	  */
-	minHeight: 150,
+	minHeight : 150,
 	/**
 	  * @cfg {Number} animDuration
 	  * Number of milliseconds the animations will take.
 	  * Default: 300
 	  */
-	animDuration: 300,
+	animDuration : 300,
 	/**
 	  * @cfg {Number} easing
 	  * Easing that animations will have.
 	  * Default: 'ease-in'
 	  */
-	easing: "ease-in",
+	easing : "ease-in",
 	/**
 	  * @private
 	  */
-	type: "accordion",
+	type : "accordion",
 	/**
 	  * @private
 	  */
-	index: 0,
+	index : 0,
 
 	/**
 	  * @private
 	  */
 	initLayout : function() {
-		Ext.layout.AccordionLayout.superclass.initLayout.call(this);
+		var me = this;
+		Ext.layout.AccordionLayout.superclass.initLayout.call(me);
 
-		var owner = this.owner;
+		var owner = me.owner;
 		owner.el.un("click");
-		owner.el.on("click", this.handleOwnerClick, this, {delegate: "h3." + this.itemCls + "-header-wrap" });
+		owner.el.on("click", me.handleOwnerClick, me, {delegate: "h3." + me.itemCls + "-header-wrap" });
 	},
 
 	onLayout : function() {
-		this.expandHeight = this.getExpandHeight();
-		Ext.layout.AccordionLayout.superclass.onLayout.call(this);
+		var me          = this;
+		me.expandHeight = me.getExpandHeight();
+		Ext.layout.AccordionLayout.superclass.onLayout.call(me);
 	},
 
 	/**
 	  * @private
 	  */
 	renderItem: function(item, position, target) {
-		item.index = this.index;
+		var me      = this;
+		item.index  = me.index;
 		item.hidden = true;
-		Ext.layout.AccordionLayout.superclass.renderItem.call(this, item, position, target);
+		Ext.layout.AccordionLayout.superclass.renderItem.call(me, item, position, target);
 
-		this.wrapItem(item);
+		me.wrapItem(item);
 
-		if (this.activeItem === this.index) {
-			this.expandHeight = this.getExpandHeight();
-			this.expandItem(item);
+		if (me.activeItem === me.index) {
+			me.expandHeight = me.getExpandHeight();
+			me.expandItem(item);
 		}
 
-		this.index++;
+		me.index++;
 	},
 
 	/**
 	  * @private
 	  */
 	moveItem: function(item, position, target) {
-		target = item.el.refs.itemWrap;
+		target   = item.el.refs.itemWrap;
 		position = 1;
+
 		Ext.layout.AccordionLayout.superclass.moveItem.call(this, item, position, target);
 	},
 
@@ -99,78 +102,77 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  * @private
 	  */
 	wrapItem: function(item) {
-		var itemWrap = item.el.wrap({
-			style: "-webkit-transition: height " + this.animDuration + "ms " + this.easing + "; overflow: hidden;"
-		});
-
-		var parent = itemWrap.wrap({
-			cls: "section"
-		});
-
-		var header = parent.createChild({
-			tag: "h3",
-			cls: this.itemCls + "-header-wrap",
-			style: "width: 100%; color: #ffffff; background-image: -webkit-gradient(linear,0% 0,0% 100%,color-stop(0%,#96A9C0),color-stop(2%,#5A7596),color-stop(100%,#394B5F));",
-			html: item.title
-		}, itemWrap);
-
-		var arrow = header.createChild({
-			tag: "div",
-			cls: this.itemCls + "-arrow"
-		});
+		var me       = this,
+			itemWrap = item.el.wrap({
+				style : "-webkit-transition: height " + me.animDuration + "ms " + me.easing + "; overflow: hidden;"
+			}),
+			parent = itemWrap.wrap({
+				cls : "section"
+			}),
+			header = parent.createChild({
+				tag  : "h3",
+				cls  : me.itemCls + "-header-wrap",
+				html : item.title
+			}, itemWrap),
+			arrow = header.createChild({
+				tag : "div",
+				cls : me.itemCls + "-arrow"
+			});
 
 		item.el.refs = {
-			itemWrap: itemWrap,
-			parentWrap: parent,
-			header: header,
-			arrow: arrow
+			itemWrap   : itemWrap,
+			parentWrap : parent,
+			header     : header,
+			arrow      : arrow
 		};
 	},
 
 	expandItem: function(item) {
-		item = this.parseActiveItem(item);
+		var me = this;
+		item   = me.parseActiveItem(item);
 
-		if (!item.fireEvent("beforeactivate", this.owner, item, this.activeItem)) { return false; }
-		if (!item.fireEvent("beforeexpand", this.owner, item, this.activeItem)) { return false; }
+		if (!item.fireEvent("beforeactivate", me.owner, item, me.activeItem)) { return false; }
+		if (!item.fireEvent("beforeexpand", me.owner, item, me.activeItem)) { return false; }
 
-		var el = item.el,
+		var el    = item.el,
 			arrow = el.refs.arrow;
 
-		this.activeItem = item;
+		me.activeItem = item;
 
-		el.refs.itemWrap.setHeight(this.expandHeight);
+		el.refs.itemWrap.setHeight(me.expandHeight);
 
-		this.rotateArrow(arrow, 90);
+		me.rotateArrow(arrow, 90);
 
 		new Ext.util.DelayedTask(function() {
-			item.setHeight(this.expandHeight);
+			item.setHeight(me.expandHeight);
 			item.setVisible(true);
-			item.fireEvent("activate", this.owner, item, this.activeItem);
-			item.fireEvent("expand", this.owner, item, this.activeItem);
-		}, this).delay(this.animDuration);
+			item.fireEvent("activate", me.owner, item, me.activeItem);
+			item.fireEvent("expand", me.owner, item, me.activeItem);
+		}, me).delay(me.animDuration);
 	},
 
 	collapseItem: function(item) {
-		item = this.parseActiveItem(item);
+		var me = this;
+		item   = me.parseActiveItem(item);
 
-		if (!item.fireEvent("beforedeactivate", this.owner, item, this.activeItem)) { return false; }
-		if (!item.fireEvent("beforecollapse", this.owner, item, this.activeItem)) { return false; }
+		if (!item.fireEvent("beforedeactivate", me.owner, item, me.activeItem)) { return false; }
+		if (!item.fireEvent("beforecollapse", me.owner, item, me.activeItem)) { return false; }
 
-		var el = item.el,
+		var el    = item.el,
 			arrow = el.refs.arrow;
 
-		this.activeItem = undefined;
+		me.activeItem = undefined;
 
 		el.refs.itemWrap.setHeight(0);
 
-		this.rotateArrow(arrow, 0);
+		me.rotateArrow(arrow, 0);
 
 		new Ext.util.DelayedTask(function() {
 			item.setHeight(0);
 			item.setVisible(true);
-			item.fireEvent("deactivate", this.owner, item, this.activeItem);
-			item.fireEvent("collapse", this.owner, item, this.activeItem);
-		}, this).delay(this.animDuration);
+			item.fireEvent("deactivate", me.owner, item, me.activeItem);
+			item.fireEvent("collapse", me.owner, item, me.activeItem);
+		}, me).delay(me.animDuration);
 	},
 
 	/**
@@ -178,11 +180,13 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	 * @returns {Ext.Component}
 	 */
 	getActiveItem: function() {
-		if (!this.activeItem && this.owner) {
-			this.activeItem = this.parseActiveItem(this.owner.activeItem);
+		var me = this;
+
+		if (!me.activeItem && me.owner) {
+			me.activeItem = me.parseActiveItem(me.owner.activeItem);
 		}
-		if (this.activeItem && this.owner.items.items.indexOf(this.activeItem) != -1) {
-			return this.activeItem;
+		if (me.activeItem && me.owner.items.items.indexOf(me.activeItem) != -1) {
+			return me.activeItem;
 		}
 		return null;
 	},
@@ -191,12 +195,14 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  * @private
 	  */
 	parseActiveItem: function(item) {
+		var me = this;
+
 		if (item && item.isComponent) {
 			return item;
 		} else if (typeof item == 'number' || item == undefined) {
-			return this.getLayoutItems()[item || 0];
+			return me.getLayoutItems()[item || 0];
 		} else {
-			return this.owner.getComponent(item);
+			return me.owner.getComponent(item);
 		}
 	},
 
@@ -205,15 +211,16 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	handleOwnerClick: function(e, t) {
 		e.stopEvent();
-		var el = Ext.get(t),
+		var me     = this,
+			el     = Ext.get(t),
 			itemEl = el.next().first(),
-			item = this.parseActiveItem(itemEl.id);
+			item   = me.parseActiveItem(itemEl.id);
 
-		if (item === this.activeItem && this.allowCollapse) {
-			this.collapseItem(item);
+		if (item === me.activeItem && me.allowCollapse) {
+			me.collapseItem(item);
 		} else {
-			this.collapseItem(this.activeItem);
-			this.expandItem(item);
+			me.collapseItem(me.activeItem);
+			me.expandItem(item);
 		}
 	},
 
@@ -240,13 +247,15 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  * @private
 	  */
 	rotateArrow: function(el, deg) {
+		var me = this;
+
 		el.setStyle({
-			"-webkit-transform": "rotate(" + deg + "deg)",
-			"-webkit-transition-property": "-webkit-transform",
-			"-webkit-transition-duration": this.animDuration + "ms",
-			"-webkit-transition-timing-function": this.easing
+			"-webkit-transform"                  : "rotate(" + deg + "deg)",
+			"-webkit-transition-property"        : "-webkit-transform",
+			"-webkit-transition-duration"        : me.animDuration + "ms",
+			"-webkit-transition-timing-function" : me.easing
 		});
-	},
+	}
 });
 
 Ext.regLayout("accordion", Ext.layout.AccordionLayout);
