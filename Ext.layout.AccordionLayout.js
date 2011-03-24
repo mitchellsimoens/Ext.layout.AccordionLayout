@@ -47,6 +47,12 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	allowCollapse : false,
 	/**
+	  * @cfg {Boolean} allowAutoCollapse
+	  * Allow the previously expanded item to collapse when another item is expanded.
+	  * Default: true
+	  */
+	allowAutoCollapse : true,
+	/**
 	  * @cfg {String} easing
 	  * Easing that animations will have.
 	  * Default: 'ease-in'
@@ -110,7 +116,13 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 		me.wrapItem(item);
 
-		if (me.activeItem === me.index) {
+		var active = me.activeItem;
+
+		if (!Ext.isNumber(active) && !me.allowCollapse) {
+			active = 0;
+		}
+
+		if (active === me.index) {
 			me.expandHeight = me.getExpandHeight();
 			me.expandItem(item);
 		}
@@ -184,6 +196,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		me.rotateArrow(arrow, 90);
 
 		new Ext.util.DelayedTask(function() {
+			item.isExpanded = true;
 			item.setVisible(true);
 			item.fireEvent("activate", me.owner, item, me.activeItem);
 			item.fireEvent("expand", me.owner, item, me.activeItem);
@@ -207,9 +220,25 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		me.rotateArrow(arrow, 0);
 
 		new Ext.util.DelayedTask(function() {
+			item.isExpanded = false;
 			item.fireEvent("deactivate", me.owner, item, me.activeItem);
 			item.fireEvent("collapse", me.owner, item, me.activeItem);
 		}, me).delay(me.animDuration);
+	},
+
+	collapseAll: function() {
+		var me = this,
+			items = me.getLayoutItems(),
+			i = 0,
+			ln = items.length,
+			item;
+
+		for (; i < ln; i++) {
+			item = items[i];
+			if (item.isExpanded) {
+				me.collapseItem(item);
+			}
+		}
 	},
 
 	/**
@@ -253,10 +282,23 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 			itemEl = el.next().first(),
 			item   = me.parseActiveItem(itemEl.id);
 
+		if (item.isExpanded && me.allowCollapse) {
+			me.collapseItem(item);
+		} else {
+			if (me.allowAutoCollapse) {
+				me.collapseAll();
+			}
+			me.expandItem(item);
+		}
+
+		return ;
+
 		if (item === me.activeItem && me.allowCollapse) {
 			me.collapseItem(item);
 		} else {
-			me.collapseItem(me.activeItem);
+			if (me.allowAutoCollapse) {
+				me.collapseItem(me.activeItem);
+			}
 			me.expandItem(item);
 		}
 	},
