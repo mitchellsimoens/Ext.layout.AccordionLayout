@@ -2,13 +2,13 @@
 	padding: 1em 0;
 }
 
-.x-accordion-item-header-wrap {
+.x-accordion-header {
 	width: 100%;
 	color: #ffffff;
 	background-image: -webkit-gradient(linear,0% 0,0% 100%,color-stop(0%,#96A9C0),color-stop(2%,#5A7596),color-stop(100%,#394B5F));
 }
 
-.x-accordion-item-arrow {
+.x-accordion-arrow {
 	display: inline;
 	float: right;
 	width: 20px;

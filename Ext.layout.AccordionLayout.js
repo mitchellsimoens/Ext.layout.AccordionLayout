@@ -13,6 +13,18 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	itemCls : "x-accordion-item",
 	/**
+	  * @cfg {String} headerCls
+	  * Default CSS class to be added to each item's header.
+	  * Default: 'x-accordion-header'
+	  */
+	headerCls : "x-accordion-header",
+	/**
+	  * @cfg {String} arrowCls
+	  * Default CSS class to be added to each item's arrow.
+	  * Default: 'x-accordion-arrow'
+	  */
+	arrowCls : "x-accordion-arrow",
+	/**
 	  * @cfg {String} targetCls
 	  * Default CSS class to be added to target el.
 	  * Default: 'x-layout-accordion'
@@ -60,7 +72,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 
 		var owner = me.owner;
 		owner.el.un("click");
-		owner.el.on("click", me.handleOwnerClick, me, {delegate: "h3." + me.itemCls + "-header-wrap" });
+		owner.el.on("click", me.handleOwnerClick, me, {delegate: "h3." + me.headerCls });
 	},
 
 	onLayout : function() {
@@ -76,6 +88,10 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		var me      = this;
 		item.index  = me.index;
 		item.hidden = true;
+
+		item.removeCls(me.itemCls);
+		item.addCls(me.itemCls);
+
 		Ext.layout.AccordionLayout.superclass.renderItem.call(me, item, position, target);
 
 		me.wrapItem(item);
@@ -111,12 +127,12 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 			}),
 			header = parent.createChild({
 				tag  : "h3",
-				cls  : me.itemCls + "-header-wrap",
+				cls  : me.headerCls,
 				html : item.title
 			}, itemWrap),
 			arrow = header.createChild({
 				tag : "div",
-				cls : me.itemCls + "-arrow"
+				cls : me.arrowCls
 			});
 
 		item.el.refs = {
