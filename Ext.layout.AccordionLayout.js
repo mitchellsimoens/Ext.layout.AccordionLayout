@@ -2,8 +2,18 @@ Ext.ns("Ext.layout");
 
 Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	/**
-	  * @cfg {String} activeItem
+	  * @cfg {Number} activeItem
 	  * The active item to start active.
+	  * Default: undefined
+	  */
+	/**
+	  * @cfg {Number} minHeight
+	  * Minimum height of expanded component.
+	  * Default: undefined
+	  */
+	/**
+	  * @cfg {Number} maxHeight
+	  * Masimum height of expanded component.
 	  * Default: undefined
 	  */
 	/**
@@ -37,11 +47,11 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	allowCollapse : false,
 	/**
-	  * @cfg {Number} minHeight
-	  * Minimum height of expanded component.
-	  * Default: 150
+	  * @cfg {String} easing
+	  * Easing that animations will have.
+	  * Default: 'ease-in'
 	  */
-	minHeight : 150,
+	easing : "ease-in",
 	/**
 	  * @cfg {Number} animDuration
 	  * Number of milliseconds the animations will take.
@@ -49,11 +59,12 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	  */
 	animDuration : 300,
 	/**
-	  * @cfg {Number} easing
-	  * Easing that animations will have.
-	  * Default: 'ease-in'
+	  * @cfg {Boolean} fill
+	  * Whether or not to have items fill all available space.
+	  * Will take into consideration the minHeight and maxHeight
+	  * Default: false
 	  */
-	easing : "ease-in",
+	fill : false,
 	/**
 	  * @private
 	  */
@@ -87,12 +98,15 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 	renderItem: function(item, position, target) {
 		var me      = this;
 		item.index  = me.index;
-		item.hidden = true;
 
 		item.removeCls(me.itemCls);
 		item.addCls(me.itemCls);
 
 		Ext.layout.AccordionLayout.superclass.renderItem.call(me, item, position, target);
+
+		item.expandHeight = item.getHeight();
+
+		item.setVisible(false);
 
 		me.wrapItem(item);
 
@@ -151,16 +165,25 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		if (!item.fireEvent("beforeexpand", me.owner, item, me.activeItem)) { return false; }
 
 		var el    = item.el,
-			arrow = el.refs.arrow;
+			arrow = el.refs.arrow,
+			height;
 
 		me.activeItem = item;
 
-		el.refs.itemWrap.setHeight(me.expandHeight);
+		if (me.fill) {
+			height = me.expandHeight
+		} else {
+			height = (item.expandHeight > 0) ? item.expandHeight : item.getHeight();
+		}
+
+		if (height > me.maxHeight) { height = me.maxHeight; }
+		if (height < me.minHeight) { height = me.minHeight; }
+
+		el.refs.itemWrap.setHeight(height);
 
 		me.rotateArrow(arrow, 90);
 
 		new Ext.util.DelayedTask(function() {
-			item.setHeight(me.expandHeight);
 			item.setVisible(true);
 			item.fireEvent("activate", me.owner, item, me.activeItem);
 			item.fireEvent("expand", me.owner, item, me.activeItem);
@@ -184,8 +207,6 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 		me.rotateArrow(arrow, 0);
 
 		new Ext.util.DelayedTask(function() {
-			item.setHeight(0);
-			item.setVisible(true);
 			item.fireEvent("deactivate", me.owner, item, me.activeItem);
 			item.fireEvent("collapse", me.owner, item, me.activeItem);
 		}, me).delay(me.animDuration);
@@ -249,12 +270,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.ContainerLayout, {
 			numItems     = items.length,
 			header       = items[0].el.refs.header,
 			headerHeight = header.getHeight() * numItems,
-			expandHeight = me.getTarget().getHeight() - headerHeight,
-			minHeight    = me.minHeight;
-
-		if (expandHeight < minHeight) {
-			expandHeight = minHeight;
-		}
+			expandHeight = me.getTarget().getHeight() - headerHeight;
 
 		return expandHeight;
 	},
