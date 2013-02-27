@@ -1,0 +1,3 @@
+This is plugin for the old Sencha 1.X 
+
+If you are looking for the Sencha 2 Version Check Here[https://github.com/mitchellsimoens/Ux.layout.Accordion]
